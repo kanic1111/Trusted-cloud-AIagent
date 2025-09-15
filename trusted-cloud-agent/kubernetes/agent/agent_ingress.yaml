@@ -1,0 +1,37 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agent-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "selfsigned-cluster-issuer"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - agent.example.com
+      secretName: agent-selfsigned-tls   # cert-manager will create this
+  rules:
+    - host: agent.example.com
+      http:
+        paths:
+          - path: /v1/chat
+            pathType: Prefix
+            backend:
+              service:
+                name: agents-nodeport
+                port:
+                  number: 7001
+          - path: /v4/agent/vm
+            pathType: Prefix
+            backend:
+              service:
+                name: agents-nodeport
+                port:
+                  number: 8001
+          - path: /v1/agent/jupyter
+            pathType: Prefix
+            backend:
+              service:
+                name: agents-nodeport
+                port:
+                  number: 8002

@@ -12,6 +12,23 @@ spec:
       labels:
         app: qdrant
     spec:
+      initContainers:
+        - name: init-qdrant-data
+          image: alpine/git:v2.49.1
+          command:
+            - sh
+            - -c
+            - |
+              echo "Pulling Qdrant collection data..."
+              # Example: clone a repo
+              git clone -b dev https://github.com/kanic1111/Trusted-cloud-AIagent
+              cp -r Trusted-cloud-AIagent/trusted-cloud-agent/trustedcloud_vm_manager/qdtanrDB/trusted-cloud_20250701_512_10_bge-m3/ /data
+              # Or: download a tarball
+              # wget -O /tmp/collection.tar.gz https://example.com/collection.tar.gz
+              # tar -xzf /tmp/collection.tar.gz -C /data
+          volumeMounts:
+            - name: qdrant
+              mountPath: /data
       containers:
         - name: qdrant
           image: "qdrant/qdrant:latest"
@@ -25,9 +42,8 @@ spec:
             mountPath: /qdrant/storage/collections
       volumes:
       - name: qdrant
-        hostPath:
-          path: /home/ubuntu/storage_qdrant
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+            claimName: qdrant-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -42,3 +58,15 @@ spec:
       protocol: TCP
       port: 6333         # Target port (your app's internal port)
       targetPort: 6333   # Pod containerPort
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qdrant-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: nfs-csi

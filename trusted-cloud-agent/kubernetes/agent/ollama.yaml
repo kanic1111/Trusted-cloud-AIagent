@@ -12,6 +12,20 @@ spec:
       labels:
         app: ollama
     spec:
+      initContainers:
+        - name: pull-bge-m3
+          image: ollama/ollama:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Pulling bge-m3 model..."
+              ollama serve >/var/log/ollama-serve.log 2>&1 & 
+              sleep 2
+              ollama pull bge-m3
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /root/.ollama
       containers:
         - name: ollama
           image: "ollama/ollama:latest"
@@ -20,6 +34,13 @@ spec:
           env:
             - name: OLLAMA_HOST
               value: 0.0.0.0:11434
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /root/.ollama
+      volumes:
+        - name: ollama-data
+          persistentVolumeClaim:
+            claimName: ollama-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -34,3 +55,16 @@ spec:
       protocol: TCP
       port: 11434        # Target port (your app's internal port)
       targetPort: 11434   # Pod containerPort
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: nfs-csi

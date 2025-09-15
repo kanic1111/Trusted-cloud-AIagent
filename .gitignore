@@ -1,1 +1,3 @@
 trusted-cloud-agent/helm/
+trusted-cloud-agent/scripts
+install.sh

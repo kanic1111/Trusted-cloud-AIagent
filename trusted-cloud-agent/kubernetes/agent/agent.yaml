@@ -44,11 +44,11 @@ spec:
           limits:
             cpu: "2"
             memory: "2Gi"
-      - name: jupyter-api
+      - name: vm-api
         image: kanic1111/trusted-cloud-agent:v1
         command: ["uvicorn"]
         args:
-          - "jupyter_api:app"
+          - "vm_api:app"
           - "--host"
           - "0.0.0.0"
           - "--port"
@@ -61,11 +61,11 @@ spec:
           limits:
             cpu: "2"
             memory: "2Gi"
-      - name: vm-api
+      - name: jupyter-api
         image: kanic1111/trusted-cloud-agent:v1
         command: ["uvicorn"]
         args:
-          - "vm_api:app"
+          - "vm_api_jupyter:app"
           - "--host"
           - "0.0.0.0"
           - "--port"
@@ -90,7 +90,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    app: llama
+    app: agent-api
   ports:
     - name: llm-api
       protocol: TCP
