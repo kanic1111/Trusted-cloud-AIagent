@@ -50,7 +50,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: llama4-nodeport
+  name: ollama-nodeport
 spec:
   type: NodePort
   selector:
