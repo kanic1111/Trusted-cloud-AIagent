@@ -1,0 +1,76 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ollama-llm-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama-llm
+  template:
+    metadata:
+      name: ollama-llm
+      labels:
+        app: ollama-llm
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        command: 
+          - bash
+          - -c
+          - |
+            echo "Start Ollama server"
+            ollama serve >/var/log/ollama-serve.log 2>&1 & 
+            sleep 5
+            echo "Preloading model... "
+            ollama run llama3.3:70b-instruct-q5_K_M 
+            echo "Model is Ready and serving..."
+            wait -n
+        volumeMounts:
+        - name: ollama-data
+          mountPath: /root/.ollama
+        - mountPath: /dev/shm
+          name: dev-shm
+        env:
+        - name: OLLAMA_HOST
+          value: 0.0.0.0:11434
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+      volumes:
+      - name: ollama-data
+        persistentVolumeClaim:
+          claimName: ollama-workspace
+      - emptyDir:
+          medium: "Memory"
+          sizeLimit: "64Gi"
+        name: dev-shm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llama4-nodeport
+spec:
+  type: NodePort
+  selector:
+    app: ollama-llm
+  ports:
+    - name: http
+      protocol: TCP
+      port: 11434         # Target port (your app's internal port)
+      targetPort: 11434   # Pod containerPort
+      nodePort: 30002
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-workspace
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: nfs-csi

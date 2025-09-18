@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: agent-cert-selfsigned
+  namespace: default
+spec:
+  secretName: agent-selfsigned-tls
+  duration: 8760h     # 1 year
+  renewBefore: 240h   # renew 10 days before expiry
+  commonName: agent.example.com
+  dnsNames:
+    - agent.example.com
+  issuerRef:
+    name: selfsigned-cluster-issuer
+    kind: ClusterIssuer

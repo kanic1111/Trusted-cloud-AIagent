@@ -1,0 +1,21 @@
+{{- $ctx := . }}
+{{- range .Values.models }}
+{{- if eq .infer_method  "llama-factory" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "Trusted-cloud-llm.fullname" $ctx }}
+  labels:
+    {{- include "Trusted-cloud-llm.labels" $ctx | nindent 4 }}
+spec:
+  type: {{ .service.type }}
+  ports:
+    - port: {{ .service.port }}
+      targetPort: {{ .service.port }}
+      protocol: TCP
+      nodePort: {{ .service.nodeport }}
+      name: openai
+  selector:
+    {{- include "Trusted-cloud-llm.selectorLabels" $ctx | nindent 4 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,115 @@
+{{- $ctx := . }}
+{{- range .Values.models }}
+{{- if eq .infer_method  "vllm" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vllm.fullname" $ctx }}
+  labels:
+    {{- include "vllm.labels" $ctx | nindent 4 }}
+spec:
+  {{- if not $ctx.Values.autoscaling.enabled }}
+  replicas: {{ .replicaCount | default 1 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "vllm.selectorLabels" $ctx | nindent 6 }}
+  template:
+    metadata:
+      {{- with $ctx.Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "vllm.labels" $ctx | nindent 8 }}
+        {{- with $ctx.Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with $ctx.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "vllm.serviceAccountName" $ctx }}
+      {{- with $ctx.Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Name | default "vllm" }}
+        command: ["bash", "-c"]
+        args:
+          - |
+            {{ include "vllm.vllmServeCommand"  . | nindent 12 | default .model_name | trim }}
+        {{- with .securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        image: "{{ .image.repository | default "vllm/vllm-openai:" }}:{{ .image.tag | default "latest" }}"
+        imagePullPolicy: {{ .image.pullPolicy }}
+        ports:
+          - name: openai
+            containerPort: {{ .service.port }}
+            protocol: TCP
+      {{- if .healthcheck.enabled }}
+        {{- with .healthcheck.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        {{- with .healthcheck.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+      {{- end }}
+      {{- if .env }}
+        env:
+        {{- range $key, $val := .env }}
+          - name: {{ $key | upper | replace "-" "_" }}
+            value: "{{ $val }}"
+        {{- end }}
+          - name: API_MODEL_NAME
+            value: {{ .model_name | quote }}
+      {{- end }}
+        {{- with .resources }}
+        resources:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .config }}
+        - name: deepspeed_config
+          mountPath: /workspace/
+          subPath: deepspeed_config.json
+        {{- end }}
+        - name: {{ $ctx.Values.storage.pvc.name }}
+          mountPath: /workspace
+        - name: dev-shm
+          mountPath: /dev/shm
+   {{- if $ctx.Values.storage.volumes }}
+      volumes:
+      {{- if .config }}
+      - name: deepspeed_config
+        configMap:
+          name: deepspeed_config
+      {{- end }}
+      - name: {{ $ctx.Values.storage.pvc.name }}
+        persistentVolumeClaim:
+          claimName: {{ $ctx.Values.storage.pvc.name }}-pvc
+      - name: dev-shm
+        emptyDir:
+          medium: "Memory"
+          sizeLimit: {{ $ctx.Values.storage.shmSize }}
+    {{- end }}
+      {{- with $ctx.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $ctx.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $ctx.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

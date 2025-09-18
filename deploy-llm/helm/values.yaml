@@ -1,0 +1,287 @@
+# Default values for llama4-helm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
+replicaCount: 1
+
+models:
+- infer_method: "llama-factory"
+  image:
+    repository: kanic1111/llama-factory
+    # This sets the pull policy for images.
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "05-23"
+  model_name: RedHatAI/Llama-4-Scout-17B-16E-Instruct-FP8-dynamic
+  securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+# runAsUser: 1000
+  # hf_cache: true 
+  # env for both llama-factory and hugging face
+  # env are all optional but the cache store should be point to the pvc mount path
+  env:
+    huggingface-cache: true
+    hf-home: "/workspace/hf/cache"
+    huggingface-hub-cache: "/workspace/hf/hub_cache"
+    api-port: "8000"
+    vllm-allow-long-max-model-len: "0"
+    hf_token: ""
+  # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+  service:
+    # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+    type: NodePort
+    # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+    port: 8000 #LLM Listened Posrt
+    nodeport: 30003 # nodeport for LLM Service
+      #config path to Llama-factory
+
+  # for CLI arg please check llamafactory github: https://github.com/hiyouga/LLaMA-Factory/tree/main 
+  # vllm max_model_len adjust by yourself
+  # cli_args:
+  #   infer_backend: vllm #llama-factory supports huggingface sglangs vllm
+  #   mode: api # check llamafactory github to see all avaliable options
+  #   vllm:
+  #     extraArgs:
+  #       vllm_enforce_eager: true
+  #       vllm_gpu_util: 0.9
+  #       vllm_maxlen: 32768
+  cli_args:
+    infer_backend: vllm #llama-factory supports huggingface sglangs vllm
+    mode: api # check llamafactory github to see all avaliable options
+    vllm:
+      extraArgs:
+        vllm_enforce_eager: true
+        vllm_gpu_util: 0.9
+        vllm_maxlen: 32768
+
+  # for template please check llamafactory github: https://github.com/hiyouga/LLaMA-Factory/tree/main
+  # examples for inference :
+  # config:
+  #   name: llama4-config-2
+  #   filename: llama4.yaml
+  #   template:
+  #     model_name_or_path: meta-llama/Meta-Llama-3-8B-Instruct
+  #     template: llama3
+  #     infer_backend: huggingface  # choices: [huggingface, vllm, sglang]
+  #     trust_remote_code: true
+
+  templatepath: "/workspace/config/llama4.yaml"
+  config:
+    name: llama4-config-2
+    filename: llama4.yaml
+    template:
+      model_name_or_path: RedHatAI/Llama-4-Scout-17B-16E-Instruct-FP8-dynamic
+      template: llama4
+      infer_backend: vllm
+      trust_remote_code: true
+  healthcheck:
+    enabled: false
+    livenessProbe:
+      httpGet:
+        path: /v1/models
+        port: 8000
+    readinessProbe:
+      httpGet:
+        path: /v1/models
+        port: 8000
+  resources:
+    limits:
+      nvidia.com/gpu: 1 #llama4 require at leastt 150GB memory  
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #  cpu: 100m
+    #   memory: 128Mi
+  # env example:
+  # env:
+  #   huggingface-cache: true
+  #   hf-home: "/workspace/huggingface/cache"
+  #   
+  # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
+
+  #pvc example
+  pvc:
+    enabled: true
+    use_existed: false
+    name: workspace
+    storageClassName: "nfs-csi"
+    accessMode: ReadWriteMany
+    size: 1Ti # atleast 500GB needed to download model
+
+- infer_method: vllm
+  name: "vllm-container"
+  model_name: "RedHatAI/whisper-large-v3-FP8-Dynamic"
+  replicaCount: 1
+  hf_token: ""
+  image:
+    repository: vllm/vllm-openai
+    # This sets the pull policy for images.
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "gptoss"
+  extraArgs:
+    --enforce-eager: true
+    --gpu-memory-utilization: 0.7
+    --max-model-len: 448  
+    --async-scheduling: true
+  pvc:
+    enabled: true
+    use_existed: true
+    name: workspace
+    storageClassName: "nfs-csi"
+    accessMode: ReadWriteMany
+    size: 1Ti 
+  env:
+    huggingface-cache: true
+    hf-home: "/workspace/hf/cache"
+    huggingface-hub-cache: "/workspace/hf/hub_cache"
+    api-port: "8000"
+    vllm-allow-long-max-model-len: "0"
+    hf_token: ""
+  config:
+    name: deepspeed_config
+    path: config/deepspeed_config.json
+    
+    
+  # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
+  service:
+    # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+    type: NodePort
+    name: vllm-port # leave it empty will have random ganerated name 
+    # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
+    port: 8000 #LLM Listened Posrt
+    nodeport: 30003
+  healthcheck:
+    enabled: false
+    livenessProbe:
+      httpGet:
+        path: /v1/models
+        port: 8000
+    readinessProbe:
+      httpGet:
+        path: /v1/models
+        port: 8000
+  resources:
+    limits:
+      nvidia.com/gpu: 1 
+
+# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# This is for setting Kubernetes Annotations to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+podAnnotations: {}
+# This is for setting Kubernetes Labels to a Pod.
+# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+
+
+
+# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false # true if you want ingress
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: llama4-fp8.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+
+# This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+
+# This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
+# autoscaling doesn't work on inference
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+
+# Additional volumes on the output Deployment definition.
+storage:
+  shmSize: 64Gi
+  volumes: 
+  - name: "{{ .Values.llama_factory.config.name }}"
+    configMap:
+      name: "{{ .Values.llama_factory.config.name }}"
+  - name: "{{ .Values.storage.pvc.name }}"
+    persistentVolumeClaim:
+      claimName: "{{ .Values.storage.pvc.name }}-pvc"
+  - name: dev-shm
+    emptyDir:
+      medium: "Memory"
+      sizeLimit: "{{ .Values.storage.shmSize }}"
+
+  # volume example
+  # - name: workspace
+  # persistentVolumeClaim:
+  #   claimName: "{{ .Values.storage.pvc.name }}-pvc"
+  local-storage:
+    enabled: false #does not recommand to use local mountpoint
+    path: /mnt/model_save # any location that have 500Gb or above
+
+  #pvc example
+
+  pvc:
+    enabled: true
+    use_existed: false
+    name: workspace
+    storageClassName: "nfs-csi"
+    accessMode: ReadWriteMany
+    size: 1Ti # atleast 500GB needed to download model
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: 
+- name: "{{ .Values.llama_factory.config.name }}"
+  mountPath: "{{ .Values.llama_factory.templatepath }}"
+  subPath: "{{ .Values.llama_factory.config.name }}"
+- name: "{{ .Values.storage.pvc.name }}"
+  mountPath: /workspace
+- name: dev-shm
+  mountPath: /dev/shm
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
