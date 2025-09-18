@@ -24,7 +24,7 @@ spec:
             ollama serve >/var/log/ollama-serve.log 2>&1 & 
             sleep 5
             echo "Preloading model... "
-            ollama run llama3.3:70b-instruct-q5_K_M 
+            ollama run gpt-oss:20b
             echo "Model is Ready and serving..."
             wait -n
         volumeMounts:

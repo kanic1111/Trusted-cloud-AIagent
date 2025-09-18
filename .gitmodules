@@ -1,0 +1,3 @@
+[submodule "trusted-cloud-agent/Trustedcloud-smart-agent"]
+	path = trusted-cloud-agent/Trustedcloud-smart-agent
+	url = https://github.com/kanic1111/Trustedcloud-smart-agent.git

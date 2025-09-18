@@ -1,9 +1,0 @@
-services/
-qdtanrDB/
-*.yml
-*.yaml
-*.md
-*.log
-*.txt
-*.sh
-Dockerfile*
