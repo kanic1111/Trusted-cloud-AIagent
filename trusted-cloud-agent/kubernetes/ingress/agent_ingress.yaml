@@ -14,24 +14,10 @@ spec:
     - host: agent.example.com
       http:
         paths:
-          - path: /v1/chat
+          - path: /agent
             pathType: Prefix
             backend:
               service:
                 name: agents-nodeport
                 port:
                   number: 7001
-          - path: /v4/agent/vm
-            pathType: Prefix
-            backend:
-              service:
-                name: agents-nodeport
-                port:
-                  number: 8001
-          - path: /v1/agent/jupyter
-            pathType: Prefix
-            backend:
-              service:
-                name: agents-nodeport
-                port:
-                  number: 8002

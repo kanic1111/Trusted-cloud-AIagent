@@ -22,7 +22,7 @@ spec:
               echo "Pulling bge-m3 model..."
               ollama serve >/var/log/ollama-serve.log 2>&1 & 
               sleep 2
-              ollama pull bge-m3
+              ollama pull qllama/bge-large-en-v1.5:latest
           volumeMounts:
             - name: ollama-data
               mountPath: /root/.ollama
@@ -30,10 +30,10 @@ spec:
         - name: ollama
           image: "ollama/ollama:latest"
           ports:
-            - containerPort: 11434
+            - containerPort: 11435
           env:
             - name: OLLAMA_HOST
-              value: 0.0.0.0:11434
+              value: 0.0.0.0:11435
           volumeMounts:
             - name: ollama-data
               mountPath: /root/.ollama
@@ -53,8 +53,8 @@ spec:
   ports:
     - name: http
       protocol: TCP
-      port: 11434        # Target port (your app's internal port)
-      targetPort: 11434   # Pod containerPort
+      port: 11435        # Target port (your app's internal port)
+      targetPort: 11435   # Pod containerPort
 
 ---
 apiVersion: v1

@@ -2,3 +2,4 @@ trusted-cloud-agent/helm/
 trusted-cloud-agent/scripts
 install.sh
 deplou-llm/helm/
+trusted-cloud-agent/kubernetes/agent/config.yaml

@@ -21,8 +21,8 @@ spec:
             - |
               echo "Pulling Qdrant collection data..."
               # Example: clone a repo
-              git clone -b dev https://github.com/kanic1111/Trusted-cloud-AIagent
-              cp -r Trusted-cloud-AIagent/trusted-cloud-agent/trustedcloud_vm_manager/qdtanrDB/trusted-cloud_20250701_512_10_bge-m3/ /data
+              git clone -b dev_shan https://github.com/kanic1111/Trustedcloud-smart-agent
+              cp -r Trustedcloud-smart-agent/qdtanrDB/trusted-cloudEN_20250923_512_10_bge-m3/ /data
               # Or: download a tarball
               # wget -O /tmp/collection.tar.gz https://example.com/collection.tar.gz
               # tar -xzf /tmp/collection.tar.gz -C /data

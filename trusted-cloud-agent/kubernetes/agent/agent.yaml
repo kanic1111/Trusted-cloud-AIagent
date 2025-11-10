@@ -21,63 +21,25 @@ spec:
           - -c
           - |
             echo -e "Waiting for Qdrant and Ollama... \n"
-            until wget -qO- http://qdrant.default.svc.cluster.local:6333/readyz && wget -qO- http://ollama:11434/api/tags; do
+            until wget -qO- http://qdrant.default.svc.cluster.local:6333/readyz && wget -qO- http://ollama:11435/api/tags; do
               echo "Still waiting... \n"
               sleep 5
             done
             echo "Qdrant and Ollama are ready! \n"
       containers:
-      - name: llm-api
-        image: kanic1111/trusted-cloud-agent:v1
+      - name: agent
+        image: kanic1111/trusted-cloud-agent:v3
         command: ["uvicorn"]
         args:
-          - "llm_api:app"
+          - "agent_main:app"
           - "--host"
           - "0.0.0.0"
           - "--port"
-          - "7001"
+          - "8080"
         volumeMounts:
         - name: config
           mountPath: /app/config/settings.yaml
           subPath: settings.yaml
-        resources:
-          limits:
-            cpu: "2"
-            memory: "2Gi"
-      - name: vm-api
-        image: kanic1111/trusted-cloud-agent:v1
-        command: ["uvicorn"]
-        args:
-          - "vm_api:app"
-          - "--host"
-          - "0.0.0.0"
-          - "--port"
-          - "8001"
-        volumeMounts:
-        - name: config
-          mountPath: /app/config/settings.yaml
-          subPath: settings.yaml
-        resources:
-          limits:
-            cpu: "2"
-            memory: "2Gi"
-      - name: jupyter-api
-        image: kanic1111/trusted-cloud-agent:v1
-        command: ["uvicorn"]
-        args:
-          - "vm_api_jupyter:app"
-          - "--host"
-          - "0.0.0.0"
-          - "--port"
-          - "8002"
-        volumeMounts:
-        - name: config
-          mountPath: /app/config/settings.yaml
-          subPath: settings.yaml
-        resources:
-          limits:
-            cpu: "2"
-            memory: "2Gi"
       volumes:
       - name: config
         configMap:
@@ -92,18 +54,8 @@ spec:
   selector:
     app: agent-api
   ports:
-    - name: llm-api
+    - name: agent-nodeport
       protocol: TCP
-      port: 7001         # Target port (your app's internal port)
-      targetPort: 7001   # Pod containerPort
+      port: 8080         # Target port (your app's internal port)
+      targetPort: 8080   # Pod containerPort
       nodePort: 30071
-    - name: jupyter-api
-      protocol: TCP
-      port: 8001         # Target port (your app's internal port)
-      targetPort: 8001   # Pod containerPort
-      nodePort: 30081
-    - name: vm-api
-      protocol: TCP
-      port: 8002         # Target port (your app's internal port)
-      targetPort: 8002   # Pod containerPort
-      nodePort: 30082

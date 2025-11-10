@@ -5,12 +5,12 @@ metadata:
 data:
   settings.yaml: |
     # trusted_cloud api url
-    trusted_cloud_url: 'http://kong.140-110-139-103.nip.io/'
+    trusted_cloud_url: 'http://kong.127.0.0.1.nip.io/'
 
     # image server API
     server:
       # host_ip: ${VM_HOST}
-      host_ip: 140.110.160.253
+      host_ip: 127.0.0.1
       port: 30002  # TODO 如果沒有值 使用https://(HOST_IP)/images
     #  image_base_url: "http://140.110.160.164:8005/images"
 
@@ -30,11 +30,11 @@ data:
     # "ollama"
     # "llama4-scout"
     # Creation LLM 
-    openai_base_url: "http://140.110.160.253:30002/v1"
+    openai_base_url: "http://127.0.0.1:30002/v1"
     api_key : "ollama" # enter random value if no api_key
     llm_model_name : "gpt-oss:20b" # llm model name must support MCP
     # Q&A LLM 
-    openai_base_url_llm: "http://140.110.160.97:30002/v1"
+    openai_base_url_llm: "http://127.0.0.1:30002/v1"
     api_key_llm : "ollama"
     llm_model_name_llm : "RedHatAI/Llama-4-Scout-17B-16E-Instruct-FP8-dynamic"
 
